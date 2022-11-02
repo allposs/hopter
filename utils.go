@@ -11,7 +11,7 @@ import (
 // loadConfigFile 读取配置文件
 func loadConfigFile() []byte {
 	dir, _ := os.Getwd()
-	file := dir + "/conf/config.yaml"
+	file := dir + "/config/config.yaml"
 	b, err := os.ReadFile(file)
 	if err != nil {
 		Fatal("系统初始化异常:服务器读取配置文件异常，%v", err)
