@@ -1,4 +1,4 @@
-module allposs.com/hopter
+module github.com/allposs/hopter
 
 go 1.19
 
