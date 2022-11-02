@@ -1,4 +1,4 @@
-package hopter
+package web
 
 import (
 	"strings"

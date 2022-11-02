@@ -1,8 +1,9 @@
-package hopter
+package web
 
 import (
 	"context"
 	"fmt"
+	"github.com/allposs/hopter"
 	"io"
 	"os"
 	"path/filepath"
@@ -74,7 +75,7 @@ func newLogger(option *option) (*logrus.Logger, error) {
 		path := dir + "/logs/server.log"
 		option.LogPath = path
 	}
-	if err := makeDirAll(option.LogPath); err != nil {
+	if err := hopter.makeDirAll(option.LogPath); err != nil {
 		return nil, err
 	}
 	if option.FileNameDateFormat == "" {
@@ -124,7 +125,7 @@ func integrate(option *option) (*Logger, error) {
 		return nil, err
 	}
 	writer := new(rotatelogs.RotateLogs)
-	if isWindow() {
+	if hopter.isWindow() {
 		writer, err = rotatelogs.New(
 			fmt.Sprintf("%s-%s", option.LogPath, fileNameDateFormat),
 			rotatelogs.WithMaxAge(option.MaxAge),
@@ -172,7 +173,7 @@ func newRotateLog(option *option, levelStr string) (*rotatelogs.RotateLogs, erro
 	)
 
 	filename = fmt.Sprintf("%s.%s", option.LogPath, levelStr)
-	if isWindow() {
+	if hopter.isWindow() {
 		writer, err = rotatelogs.New(
 			fmt.Sprintf("%s.%s", filename, fileNameDateFormat),
 			rotatelogs.WithMaxAge(option.MaxAge),
