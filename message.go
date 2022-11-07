@@ -37,13 +37,18 @@ func errorHandler() gin.HandlerFunc {
 	}
 }
 
+// Context gin的context封装
+type Context struct {
+	*gin.Context
+}
+
 // HandlerFunc  处理函数
-type HandlerFunc func(ctx *gin.Context) Message
+type HandlerFunc func(ctx *Context) Message
 
 // RespondTo 消息返回处理
 func (h HandlerFunc) RespondTo() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		handlerFunc := h(ctx)
+		handlerFunc := h(&Context{ctx})
 		switch handlerFunc.IsClass() {
 		case WebsocketClass:
 			return
