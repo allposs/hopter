@@ -75,7 +75,7 @@ func (w *Web) Run() {
 func (w *Web) Attach(m Middleware) *Web {
 	w.Use(func(ctx *gin.Context) {
 		w.beanFactory.Inject(m.OnInject())
-		err := m.OnRequest(ctx)
+		err := m.OnRequest(&Context{ctx})
 		if err != nil {
 			ctx.AbortWithStatusJSON(400, gin.H{"error": err.Error()})
 		} else {
