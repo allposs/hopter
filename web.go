@@ -43,7 +43,7 @@ func New() *Web {
 	//错误处理
 	this.Use(errorHandler())
 	this.Use(LogMiddleware())
-	this.MetricsMiddleware()
+	this.MetricMiddleware()
 	this.Beans(this)
 	return this
 }
@@ -93,7 +93,7 @@ func (w *Web) Handle(httpMethod, relativePath string, handler HandlerFunc) *Web 
 }
 
 // Beans Bean注册
-func (w *Web) Beans(beans ...interface{}) *Web {
+func (w *Web) Beans(beans ...any) *Web {
 	w.beanFactory.setBean(beans...)
 	return w
 }

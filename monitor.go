@@ -1,13 +1,17 @@
 package hopter
 
 import (
-	"github.com/allposs/hopter/metrics"
+	"github.com/allposs/hopter/monitor"
 )
 
-// MetricsMiddleware Metrics插件
-func (w *Web) MetricsMiddleware() {
+// metricConfig metric监控配置
+type metricConfig struct {
+}
+
+// MetricMiddleware Metric插件
+func (w *Web) MetricMiddleware() {
 	// get global Monitor object
-	m := metrics.GetMonitor()
+	m := monitor.GetMonitor()
 	// +optional set metric path, default /debug/metrics
 	m.SetMetricPath("/metrics")
 	// +optional set slow time, default 5s

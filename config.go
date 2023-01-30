@@ -10,7 +10,7 @@ import (
 type Config map[string]any
 
 // Get 用户获取配置信息
-func (c *Config) Get(str string) interface{} {
+func (c *Config) Get(str string) any {
 	prefix := strings.Split(str, ".")
 	getValue := getConfigValue(*c, prefix, 0)
 	if getValue != nil {
@@ -20,17 +20,17 @@ func (c *Config) Get(str string) interface{} {
 }
 
 // getConfigValue 递归读取用户配置文件
-func getConfigValue(c Config, prefix []string, index int) interface{} {
+func getConfigValue(c Config, prefix []string, index int) any {
 	key := prefix[index]
 	if v, ok := c[key]; ok {
-		if index == len(prefix)-1 { //到了最后一个
+		if index == len(prefix)-1 {
+			//到了最后一个
 			return v
-		} else {
-			index = index + 1
-			if mv, ok := v.(Config); ok {
-				//值必须是Config类型
-				return getConfigValue(mv, prefix, index)
-			}
+		}
+		index = index + 1
+		if mv, ok := v.(Config); ok {
+			//值必须是Config类型
+			return getConfigValue(mv, prefix, index)
 		}
 	}
 	return nil

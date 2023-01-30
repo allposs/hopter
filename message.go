@@ -24,8 +24,8 @@ type Message interface {
 func errorHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		defer func() {
-			if e := recover(); interface{}(e) != nil {
-				switch msg := interface{}(e).(type) {
+			if e := recover(); any(e) != nil {
+				switch msg := any(e).(type) {
 				case Message:
 					ctx.AbortWithStatusJSON(200, msg.String())
 				default:

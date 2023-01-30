@@ -16,15 +16,20 @@ import (
 )
 
 const (
-	FileNameDateFormat = "%Y%m%d"              // 日志文件名的默认日期格式
-	TimestampFormat    = "2006-01-02 15:04:05" // 日志条目中的默认日期时间格式
-	Text               = "text"                // 普通文本格式日志
-	JSON               = "json"                // json格式日志
-	DataKey            = "data"                // json日志条目中 数据字段都会作为该字段的嵌入字段
+	//FileNameDateFormat 日志文件名的默认日期格式
+	FileNameDateFormat = "%Y%m%d"
+	//TimestampFormat 日志条目中的默认日期时间格式
+	TimestampFormat = "2006-01-02 15:04:05"
+	//Text 普通文本格式日志
+	Text = "text"
+	//JSON json格式日志
+	JSON = "json"
+	//DataKey json日志条目中 数据字段都会作为该字段的嵌入字段
+	DataKey = "data"
 )
 
 var (
-	logs               *klogger
+	logs               *Klogger
 	fileNameDateFormat string // 日志文件名的日期格式
 	timestampFormat    string // 日志条目中的日期时间格式
 )
@@ -59,14 +64,14 @@ type option struct {
 	JSONDataKey string `json:"jsonDataKey"`
 }
 
-// klogger 日志引擎
-type klogger struct {
+// Klogger 日志引擎
+type Klogger struct {
 	*logrus.Logger
 	enableRecordFileInfo bool
 }
 
 // Logger 获取Logger
-func Logger() *klogger {
+func Logger() *Klogger {
 	return logs
 }
 
@@ -120,7 +125,7 @@ func newLogger(option *option) (*logrus.Logger, error) {
 
 // integrate 返回Logger
 // 日志类型是: 普通文本日志|JSON日志 全部级别都写入到同一个文件
-func integrate(option *option) (*klogger, error) {
+func integrate(option *option) (*Klogger, error) {
 	log, err := newLogger(option)
 	if err != nil {
 		return nil, err
@@ -158,7 +163,7 @@ func integrate(option *option) (*klogger, error) {
 	}, log.Formatter)
 
 	log.Hooks.Add(fileHook)
-	logs = &klogger{
+	logs = &Klogger{
 		log,
 		option.IsEnableRecordFileInfo,
 	}
@@ -202,7 +207,7 @@ func newRotateLog(option *option, levelStr string) (*rotatelogs.RotateLogs, erro
 }
 
 // separate 不同级别的日志输出到不同的文件
-func separate(option *option) (*klogger, error) {
+func separate(option *option) (*Klogger, error) {
 	log, err := newLogger(option)
 	if err != nil {
 		return nil, err
@@ -241,7 +246,7 @@ func separate(option *option) (*klogger, error) {
 	}, log.Formatter)
 
 	log.Hooks.Add(fileHook)
-	logs = &klogger{
+	logs = &Klogger{
 		log,
 		option.IsEnableRecordFileInfo,
 	}
@@ -249,7 +254,7 @@ func separate(option *option) (*klogger, error) {
 }
 
 // initLog 初始化日志
-func initLog(option *option) (*klogger, error) {
+func initLog(option *option) (*Klogger, error) {
 	if option.IsClassSubFile {
 		return separate(option)
 	}
@@ -257,35 +262,42 @@ func initLog(option *option) (*klogger, error) {
 }
 
 // LogMode logger接口实现
-func (l *klogger) LogMode(logger.LogLevel) logger.Interface {
+func (l *Klogger) LogMode(logger.LogLevel) logger.Interface {
 	return l
 }
 
-func (l *klogger) Debug(ctx context.Context, message string, args ...interface{}) {
+// Debug Debug级别日志写入
+func (l *Klogger) Debug(ctx context.Context, message string, args ...interface{}) {
 	l.WithContext(ctx).Debugf(message, args...)
 }
 
-func (l *klogger) Info(ctx context.Context, message string, args ...interface{}) {
+// Info Info级别日志写入
+func (l *Klogger) Info(ctx context.Context, message string, args ...interface{}) {
 	l.WithContext(ctx).Infof(message, args...)
 }
 
-func (l *klogger) Warn(ctx context.Context, message string, args ...interface{}) {
+// Warn Warn级别日志写入
+func (l *Klogger) Warn(ctx context.Context, message string, args ...interface{}) {
 	l.WithContext(ctx).Warnf(message, args...)
 }
 
-func (l *klogger) Error(ctx context.Context, message string, args ...interface{}) {
+// Error Error级别日志写入
+func (l *Klogger) Error(ctx context.Context, message string, args ...interface{}) {
 	l.WithContext(ctx).Errorf(message, args...)
 }
 
-func (l *klogger) Fatal(ctx context.Context, message string, args ...interface{}) {
+// Fatal Fatal级别日志写入
+func (l *Klogger) Fatal(ctx context.Context, message string, args ...interface{}) {
 	l.WithContext(ctx).Fatalf(message, args...)
 }
 
-func (l *klogger) Panic(ctx context.Context, message string, args ...interface{}) {
+// Panic Panic级别日志写入
+func (l *Klogger) Panic(ctx context.Context, message string, args ...interface{}) {
 	l.WithContext(ctx).Panicf(message, args...)
 }
 
-func (l *klogger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
+// Trace Trace级别日志写入
+func (l *Klogger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
 	elapsed := time.Since(begin)
 	sql, _ := fc()
 	fields := logrus.Fields{}
@@ -304,11 +316,13 @@ func (l *klogger) Trace(ctx context.Context, begin time.Time, fc func() (sql str
 	l.WithContext(ctx).WithFields(fields).Infof("%s [%s]", sql, elapsed)
 }
 
-func Debug(message string, args ...interface{}) {
+// Debug Debug级别日志写入
+func Debug(message string, args ...any) {
 	logs.Debugf(message, args...)
 }
 
-func Info(message string, args ...interface{}) {
+// Info Info级别日志写入
+func Info(message string, args ...any) {
 	if logs == nil {
 		logrus.Infof(message, args...)
 		return
@@ -316,7 +330,8 @@ func Info(message string, args ...interface{}) {
 	logs.Infof(message, args...)
 }
 
-func Warn(message string, args ...interface{}) {
+// Warn Warn级别日志写入
+func Warn(message string, args ...any) {
 	if logs == nil {
 		logrus.Warnf(message, args...)
 		return
@@ -324,7 +339,8 @@ func Warn(message string, args ...interface{}) {
 	logs.Warnf(message, args...)
 }
 
-func Error(message string, args ...interface{}) {
+// Error Error级别日志写入
+func Error(message string, args ...any) {
 	if logs == nil {
 		logrus.Errorf(message, args...)
 		return
@@ -332,7 +348,8 @@ func Error(message string, args ...interface{}) {
 	logs.Errorf(message, args...)
 }
 
-func Fatal(message string, args ...interface{}) {
+// Fatal Fatal级别日志写入
+func Fatal(message string, args ...any) {
 	if logs == nil {
 		logrus.Fatalf(message, args...)
 		return
@@ -340,7 +357,8 @@ func Fatal(message string, args ...interface{}) {
 	logs.Fatalf(message, args...)
 }
 
-func Panic(message string, args ...interface{}) {
+// Panic Panic级别日志写入
+func Panic(message string, args ...any) {
 	if logs == nil {
 		logrus.Panicf(message, args...)
 		return
