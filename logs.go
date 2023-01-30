@@ -29,6 +29,7 @@ var (
 	timestampFormat    string // 日志条目中的日期时间格式
 )
 
+// option 日志配置参数
 type option struct {
 	// log 路径
 	LogPath string `yaml:"logPath"`
@@ -58,6 +59,7 @@ type option struct {
 	JSONDataKey string `json:"jsonDataKey"`
 }
 
+// klogger 日志引擎
 type klogger struct {
 	*logrus.Logger
 	enableRecordFileInfo bool
@@ -246,6 +248,7 @@ func separate(option *option) (*klogger, error) {
 	return logs, nil
 }
 
+// initLog 初始化日志
 func initLog(option *option) (*klogger, error) {
 	if option.IsClassSubFile {
 		return separate(option)
@@ -253,6 +256,7 @@ func initLog(option *option) (*klogger, error) {
 	return integrate(option)
 }
 
+// LogMode logger接口实现
 func (l *klogger) LogMode(logger.LogLevel) logger.Interface {
 	return l
 }
@@ -344,6 +348,7 @@ func Panic(message string, args ...interface{}) {
 	logs.Panicf(message, args...)
 }
 
+// LogMiddleware 日志插件
 func LogMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
@@ -356,7 +361,7 @@ func LogMiddleware() gin.HandlerFunc {
 		//请求方式
 		reqMethod := c.Request.Method
 		//请求路由
-		reqUri := c.Request.RequestURI
+		reqURI := c.Request.RequestURI
 		// 状态码
 		statusCode := c.Writer.Status()
 		//请求ip
@@ -367,7 +372,7 @@ func LogMiddleware() gin.HandlerFunc {
 		reqUa := c.Request.UserAgent()
 		var resultBody logrus.Fields
 		resultBody = make(map[string]interface{})
-		resultBody["requestUri"] = reqUri
+		resultBody["requestUri"] = reqURI
 		resultBody["clientIp"] = clientIP
 		resultBody["body"] = reqParams
 		resultBody["userAgent"] = reqUa
