@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	logs               *Logger
+	logs               *klogger
 	fileNameDateFormat string // 日志文件名的日期格式
 	timestampFormat    string // 日志条目中的日期时间格式
 )
@@ -58,13 +58,13 @@ type option struct {
 	JSONDataKey string `json:"jsonDataKey"`
 }
 
-type Logger struct {
+type klogger struct {
 	*logrus.Logger
 	enableRecordFileInfo bool
 }
 
-// GetLogger 获取Logger
-func GetLogger() *Logger {
+// Logger 获取Logger
+func Logger() *klogger {
 	return logs
 }
 
@@ -118,7 +118,7 @@ func newLogger(option *option) (*logrus.Logger, error) {
 
 // integrate 返回Logger
 // 日志类型是: 普通文本日志|JSON日志 全部级别都写入到同一个文件
-func integrate(option *option) (*Logger, error) {
+func integrate(option *option) (*klogger, error) {
 	log, err := newLogger(option)
 	if err != nil {
 		return nil, err
@@ -156,7 +156,7 @@ func integrate(option *option) (*Logger, error) {
 	}, log.Formatter)
 
 	log.Hooks.Add(fileHook)
-	logs = &Logger{
+	logs = &klogger{
 		log,
 		option.IsEnableRecordFileInfo,
 	}
@@ -200,7 +200,7 @@ func newRotateLog(option *option, levelStr string) (*rotatelogs.RotateLogs, erro
 }
 
 // separate 不同级别的日志输出到不同的文件
-func separate(option *option) (*Logger, error) {
+func separate(option *option) (*klogger, error) {
 	log, err := newLogger(option)
 	if err != nil {
 		return nil, err
@@ -239,49 +239,49 @@ func separate(option *option) (*Logger, error) {
 	}, log.Formatter)
 
 	log.Hooks.Add(fileHook)
-	logs = &Logger{
+	logs = &klogger{
 		log,
 		option.IsEnableRecordFileInfo,
 	}
 	return logs, nil
 }
 
-func initLog(option *option) (*Logger, error) {
+func initLog(option *option) (*klogger, error) {
 	if option.IsClassSubFile {
 		return separate(option)
 	}
 	return integrate(option)
 }
 
-func (l *Logger) LogMode(logger.LogLevel) logger.Interface {
+func (l *klogger) LogMode(logger.LogLevel) logger.Interface {
 	return l
 }
 
-func (l *Logger) Debug(ctx context.Context, message string, args ...interface{}) {
+func (l *klogger) Debug(ctx context.Context, message string, args ...interface{}) {
 	l.WithContext(ctx).Debugf(message, args...)
 }
 
-func (l *Logger) Info(ctx context.Context, message string, args ...interface{}) {
+func (l *klogger) Info(ctx context.Context, message string, args ...interface{}) {
 	l.WithContext(ctx).Infof(message, args...)
 }
 
-func (l *Logger) Warn(ctx context.Context, message string, args ...interface{}) {
+func (l *klogger) Warn(ctx context.Context, message string, args ...interface{}) {
 	l.WithContext(ctx).Warnf(message, args...)
 }
 
-func (l *Logger) Error(ctx context.Context, message string, args ...interface{}) {
+func (l *klogger) Error(ctx context.Context, message string, args ...interface{}) {
 	l.WithContext(ctx).Errorf(message, args...)
 }
 
-func (l *Logger) Fatal(ctx context.Context, message string, args ...interface{}) {
+func (l *klogger) Fatal(ctx context.Context, message string, args ...interface{}) {
 	l.WithContext(ctx).Fatalf(message, args...)
 }
 
-func (l *Logger) Panic(ctx context.Context, message string, args ...interface{}) {
+func (l *klogger) Panic(ctx context.Context, message string, args ...interface{}) {
 	l.WithContext(ctx).Panicf(message, args...)
 }
 
-func (l *Logger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
+func (l *klogger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
 	elapsed := time.Since(begin)
 	sql, _ := fc()
 	fields := logrus.Fields{}
