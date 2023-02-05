@@ -76,6 +76,7 @@ func Logger() *Klogger {
 }
 
 func newLogger(option *option) (*logrus.Logger, error) {
+
 	if option.LogPath == "" {
 		dir, _ := os.Getwd()
 		path := dir + "/logs/server.log"
