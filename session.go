@@ -3,8 +3,6 @@ package hopter
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
 )
 
@@ -102,19 +100,6 @@ func (s *session) Session() *sessions.Session {
 
 func (s *session) Written() bool {
 	return s.written
-}
-
-// sessionsMany 复数session
-func sessionsMany(store Store, names ...string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		sessions := make(map[string]Session, len(names))
-		for _, name := range names {
-			sessions[name] = &session{name, c.Request, store, nil, false, c.Writer}
-		}
-		c.Set("SessionStore", sessions)
-		defer context.Clear(c.Request)
-		c.Next()
-	}
 }
 
 // Session 获取Session

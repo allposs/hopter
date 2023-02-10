@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/context"
 )
 
 // Web web程序结构
@@ -46,6 +47,19 @@ func New() *Web {
 	this.MetricMiddleware()
 	this.Beans(this)
 	return this
+}
+
+// sessionsMany 复数session
+func sessionsMany(store Store, names ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		sessions := make(map[string]Session, len(names))
+		for _, name := range names {
+			sessions[name] = &session{name, c.Request, store, nil, false, c.Writer}
+		}
+		c.Set("SessionStore", sessions)
+		defer context.Clear(c.Request)
+		c.Next()
+	}
 }
 
 // SetSessionsStore Sessions存储
