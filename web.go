@@ -48,6 +48,12 @@ func New() *Web {
 	return this
 }
 
+// SetSessionsStore Sessions存储
+func (w *Web) SetSessionsStore(store Store, names ...string) *Web {
+	w.Use(sessionsMany(store, names...))
+	return w
+}
+
 // Run 运行Web程序
 func (w *Web) Run() {
 	web := http.Server{

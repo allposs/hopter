@@ -44,6 +44,7 @@ type serverConfig struct {
 	WriteTimeout   int    `yaml:"writeTimeout"`
 	IdleTimeout    int    `yaml:"idleTimeout"`
 	MaxHeaderBytes int    `yaml:"maxHeaderBytes"`
+	SessionKey     string `yaml:"sessionKey"`
 }
 
 // config 配置文件
