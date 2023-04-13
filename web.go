@@ -44,7 +44,7 @@ func New() *Web {
 	//错误处理
 	this.Use(errorHandler())
 	this.Use(LogMiddleware())
-	this.MetricMiddleware()
+	this.metricMiddleware()
 	this.Beans(this)
 	return this
 }

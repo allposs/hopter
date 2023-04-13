@@ -4,8 +4,8 @@ import (
 	"github.com/allposs/hopter/monitor"
 )
 
-// MetricMiddleware Metric插件
-func (w *Web) MetricMiddleware() *Web {
+// metricMiddleware Metric插件
+func (w *Web) metricMiddleware() {
 	// get global Monitor object
 	m := monitor.GetMonitor()
 	// +optional set metric path, default /debug/metrics
@@ -18,5 +18,4 @@ func (w *Web) MetricMiddleware() *Web {
 	// set middleware for gin
 	m.Use(w.Engine)
 	w.beanFactory.setBean(m)
-	return w
 }
