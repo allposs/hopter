@@ -34,8 +34,8 @@ var (
 	timestampFormat    string // 日志条目中的日期时间格式
 )
 
-// option 日志配置参数
-type option struct {
+// LogConfig 日志配置参数
+type LogConfig struct {
 	// log 路径
 	LogPath string `yaml:"logPath"`
 	// 日志类型 json|text
@@ -75,7 +75,7 @@ func Logger() *Klogger {
 	return logs
 }
 
-func newLogger(option *option) (*logrus.Logger, error) {
+func newLogger(option *LogConfig) (*logrus.Logger, error) {
 
 	if option.LogPath == "" {
 		dir, _ := os.Getwd()
@@ -126,7 +126,7 @@ func newLogger(option *option) (*logrus.Logger, error) {
 
 // integrate 返回Logger
 // 日志类型是: 普通文本日志|JSON日志 全部级别都写入到同一个文件
-func integrate(option *option) (*Klogger, error) {
+func integrate(option *LogConfig) (*Klogger, error) {
 	log, err := newLogger(option)
 	if err != nil {
 		return nil, err
@@ -171,7 +171,7 @@ func integrate(option *option) (*Klogger, error) {
 	return logs, nil
 }
 
-func newRotateLog(option *option, levelStr string) (*rotatelogs.RotateLogs, error) {
+func newRotateLog(option *LogConfig, levelStr string) (*rotatelogs.RotateLogs, error) {
 	var (
 		err      error
 		filename string
@@ -208,7 +208,7 @@ func newRotateLog(option *option, levelStr string) (*rotatelogs.RotateLogs, erro
 }
 
 // separate 不同级别的日志输出到不同的文件
-func separate(option *option) (*Klogger, error) {
+func separate(option *LogConfig) (*Klogger, error) {
 	log, err := newLogger(option)
 	if err != nil {
 		return nil, err
@@ -255,7 +255,7 @@ func separate(option *option) (*Klogger, error) {
 }
 
 // initLog 初始化日志
-func initLog(option *option) (*Klogger, error) {
+func initLog(option *LogConfig) (*Klogger, error) {
 	if option.IsClassSubFile {
 		return separate(option)
 	}

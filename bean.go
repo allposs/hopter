@@ -21,8 +21,8 @@ func (b *BeanFactory) setBean(beans ...any) {
 	for _, p := range beans {
 		obj := reflect.TypeOf(p)
 		if obj.Kind() == reflect.Func {
-			conf := b.GetBean(new(Config)).(*Config)
-			b.beans = append(b.beans, p.(func(conf Config) any)(*conf))
+			conf := b.GetBean(new(Customize)).(*Customize)
+			b.beans = append(b.beans, p.(func(conf Customize) any)(*conf))
 			continue
 		}
 		b.beans = append(b.beans, p)

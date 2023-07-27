@@ -1,13 +1,14 @@
 package hopter
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/context"
+	ctx "github.com/gorilla/context"
 )
 
 // Web web程序结构
@@ -15,6 +16,7 @@ type Web struct {
 	*gin.Engine
 	group       *gin.RouterGroup
 	beanFactory *BeanFactory
+	server      *http.Server
 }
 
 func init() {
@@ -22,24 +24,31 @@ func init() {
 }
 
 // New 创建web程序
-func New() *Web {
+func New(conf ConfigInterface) *Web {
 	//配置文件
-	conf := initConfig()
 	var this = &Web{}
-	logger, err := initLog(conf.Logs)
+	logger, err := initLog(conf.Log())
 	if err != nil {
 		Fatal("系统初始化异常:初始化日志错误，%v", err)
 	}
-	switch strings.ToLower(conf.Logs.LogLevel) {
+	switch strings.ToLower(conf.Log().LogLevel) {
 	case "debug":
 		gin.SetMode(gin.DebugMode)
 	default:
 		gin.SetMode(gin.ReleaseMode)
 	}
+	this.server = &http.Server{
+		Addr:           "0.0.0.0:8080",
+		Handler:        this,
+		ReadTimeout:    30 * time.Second,
+		WriteTimeout:   30 * time.Second,
+		IdleTimeout:    30 * time.Second,
+		MaxHeaderBytes: 16384,
+	}
 	this.Engine = gin.Default()
 	this.beanFactory = NewBeanFactory()
-	this.beanFactory.setBean(conf.Server)
-	this.beanFactory.setBean(conf.Config)
+	this.beanFactory.setBean(conf.Server())
+	this.beanFactory.setBean(conf.Customize())
 	this.beanFactory.setBean(logger)
 	//错误处理
 	this.Use(errorHandler())
@@ -57,7 +66,7 @@ func sessionsMany(store Store, names ...string) gin.HandlerFunc {
 			sessions[name] = &session{name, c.Request, store, nil, false, c.Writer}
 		}
 		c.Set("SessionStore", sessions)
-		defer context.Clear(c.Request)
+		defer ctx.Clear(c.Request)
 		c.Next()
 	}
 }
@@ -70,26 +79,24 @@ func (w *Web) SetSessionsStore(store Store, names ...string) *Web {
 
 // Run 运行Web程序
 func (w *Web) Run() {
-	web := http.Server{
-		Addr:           "0.0.0.0:8080",
-		Handler:        w,
-		ReadTimeout:    30 * time.Second,
-		WriteTimeout:   30 * time.Second,
-		IdleTimeout:    30 * time.Second,
-		MaxHeaderBytes: 16384,
-	}
-	if bean := w.beanFactory.GetBean(new(serverConfig)); bean != nil {
-		if conf, ok := bean.(*serverConfig); ok {
-			web.Addr = fmt.Sprintf("%s:%s", conf.IP, conf.Port)
-			web.ReadTimeout = time.Duration(conf.ReadTimeout) * time.Second
-			web.WriteTimeout = time.Duration(conf.WriteTimeout) * time.Second
-			web.IdleTimeout = time.Duration(conf.IdleTimeout) * time.Second
-			web.MaxHeaderBytes = conf.MaxHeaderBytes
+	if bean := w.beanFactory.GetBean(new(ServerConfig)); bean != nil {
+		if conf, ok := bean.(*ServerConfig); ok {
+			w.server.Addr = fmt.Sprintf("%s:%s", conf.IP, conf.Port)
+			w.server.ReadTimeout = time.Duration(conf.ReadTimeout) * time.Second
+			w.server.WriteTimeout = time.Duration(conf.WriteTimeout) * time.Second
+			w.server.IdleTimeout = time.Duration(conf.IdleTimeout) * time.Second
+			w.server.MaxHeaderBytes = conf.MaxHeaderBytes
 		}
 	}
-	if err := web.ListenAndServe(); err != nil {
+	w.server.Handler = w
+	if err := w.server.ListenAndServe(); err != nil {
 		Fatal("系统初始化异常:服务器监听端口异常，%v", err)
 	}
+}
+
+// Shutdown 关闭服务
+func (w *Web) Shutdown(ctx context.Context) error {
+	return w.server.Shutdown(ctx)
 }
 
 // Attach 中间件加入

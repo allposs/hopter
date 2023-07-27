@@ -6,11 +6,16 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Config 用户自定义配置
-type Config map[string]any
+// Customize 用户自定义配置
+type Customize map[string]any
+
+// CustomizeInterface 自定义配置接口
+type CustomizeInterface interface {
+	Get(str string) any
+}
 
 // Get 用户获取配置信息
-func (c *Config) Get(str string) any {
+func (c *Customize) Get(str string) any {
 	prefix := strings.Split(str, ".")
 	getValue := getConfigValue(*c, prefix, 0)
 	if getValue != nil {
@@ -20,7 +25,7 @@ func (c *Config) Get(str string) any {
 }
 
 // getConfigValue 递归读取用户配置文件
-func getConfigValue(c Config, prefix []string, index int) any {
+func getConfigValue(c Customize, prefix []string, index int) any {
 	key := prefix[index]
 	if v, ok := c[key]; ok {
 		if index == len(prefix)-1 {
@@ -28,7 +33,7 @@ func getConfigValue(c Config, prefix []string, index int) any {
 			return v
 		}
 		index = index + 1
-		if mv, ok := v.(Config); ok {
+		if mv, ok := v.(Customize); ok {
 			//值必须是Config类型
 			return getConfigValue(mv, prefix, index)
 		}
@@ -36,8 +41,8 @@ func getConfigValue(c Config, prefix []string, index int) any {
 	return nil
 }
 
-// serverConfig 服务器配置
-type serverConfig struct {
+// ServerConfig 服务器配置
+type ServerConfig struct {
 	Port           string `yaml:"port"`
 	IP             string `yaml:"ip"`
 	ReadTimeout    int    `yaml:"readTimeout"`
@@ -49,24 +54,42 @@ type serverConfig struct {
 
 // config 配置文件
 type config struct {
-	Server *serverConfig
-	Logs   *option
-	Config *Config
+	server *ServerConfig
+	log    *LogConfig
+	config *Customize
 }
 
-// newConfig 新的配置文件
-func newConfig() *config {
-	return &config{Server: &serverConfig{Port: "8080", IP: "0.0.0.0"}, Logs: &option{}}
+// ConfigInterface web配置接口
+type ConfigInterface interface {
+	Server() *ServerConfig
+	Log() *LogConfig
+	Customize() CustomizeInterface
+	Config() ConfigInterface
 }
 
-// initConfig 初始化配置文件
-func initConfig() *config {
-	conf := newConfig()
+// NewConfig 新配置
+func NewConfig() ConfigInterface {
+	return &config{server: &ServerConfig{Port: "8080", IP: "0.0.0.0"}, log: &LogConfig{}}
+}
+
+func (c *config) Server() *ServerConfig {
+	return c.server
+}
+
+func (c *config) Log() *LogConfig {
+	return c.log
+}
+
+func (c *config) Customize() CustomizeInterface {
+	return c.config
+}
+
+func (c *config) Config() ConfigInterface {
 	if b := loadConfigFile(); b != nil {
-		err := yaml.Unmarshal(b, conf)
+		err := yaml.Unmarshal(b, c)
 		if err != nil {
 			Panic("系统初始化异常:服务器解析配置文件异常，%v", err)
 		}
 	}
-	return conf
+	return c
 }
