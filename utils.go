@@ -14,7 +14,7 @@ func loadConfigFile() []byte {
 	file := dir + "/config/config.yaml"
 	b, err := os.ReadFile(file)
 	if err != nil {
-		Fatal("系统初始化异常:服务器读取配置文件异常，%v", err)
+		Warn("系统初始化异常:服务器读取配置文件异常，%v", err)
 	}
 	return b
 }

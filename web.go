@@ -24,14 +24,14 @@ func init() {
 }
 
 // New 创建web程序
-func New(conf ConfigInterface) *Web {
+func New(conf Config) *Web {
 	//配置文件
 	var this = &Web{}
-	logger, err := initLog(conf.Log())
+	logger, err := initLog(conf.Read())
 	if err != nil {
 		Fatal("系统初始化异常:初始化日志错误，%v", err)
 	}
-	switch strings.ToLower(conf.Log().LogLevel) {
+	switch strings.ToLower(Level) {
 	case "debug":
 		gin.SetMode(gin.DebugMode)
 	default:
@@ -47,9 +47,7 @@ func New(conf ConfigInterface) *Web {
 	}
 	this.Engine = gin.Default()
 	this.beanFactory = NewBeanFactory()
-	this.beanFactory.setBean(conf.Server())
-	this.beanFactory.setBean(conf.Customize())
-	this.beanFactory.setBean(logger)
+	this.beanFactory.setBean(&Endpoint{conf, logger})
 	//错误处理
 	this.Use(errorHandler())
 	this.Use(LogMiddleware())
@@ -79,19 +77,26 @@ func (w *Web) SetSessionsStore(store Store, names ...string) *Web {
 
 // Run 运行Web程序
 func (w *Web) Run() {
-	if bean := w.beanFactory.GetBean(new(ServerConfig)); bean != nil {
-		if conf, ok := bean.(*ServerConfig); ok {
-			w.server.Addr = fmt.Sprintf("%s:%s", conf.IP, conf.Port)
-			w.server.ReadTimeout = time.Duration(conf.ReadTimeout) * time.Second
-			w.server.WriteTimeout = time.Duration(conf.WriteTimeout) * time.Second
-			w.server.IdleTimeout = time.Duration(conf.IdleTimeout) * time.Second
-			w.server.MaxHeaderBytes = conf.MaxHeaderBytes
+	if bean := w.beanFactory.GetBean(new(Config)); bean != nil {
+		if conf, ok := bean.(Config); ok {
+			value := defaultGinConfig()
+			if v := conf.Get("server"); v != nil {
+				if err := conf.Unmarshal("server", value); err != nil {
+					Fatal("系统初始化异常:获取http启动参数异常,%v", err)
+				}
+			}
+			w.server.Addr = fmt.Sprintf("%s:%s", value.IP, value.Port)
+			w.server.ReadTimeout = time.Duration(value.ReadTimeout) * time.Second
+			w.server.WriteTimeout = time.Duration(value.WriteTimeout) * time.Second
+			w.server.IdleTimeout = time.Duration(value.IdleTimeout) * time.Second
+			w.server.MaxHeaderBytes = value.MaxHeaderBytes
 		}
 	}
 	w.server.Handler = w
 	if err := w.server.ListenAndServe(); err != nil {
 		Fatal("系统初始化异常:服务器监听端口异常，%v", err)
 	}
+
 }
 
 // Shutdown 关闭服务
@@ -130,8 +135,6 @@ func (w *Web) Mount(group string, class ...Interface) *Web {
 	w.group = w.Group(group)
 	for _, v := range class {
 		w.beanFactory.inject(v)
-		//		v.Init()
-		//		v.Build(w)
 		w.Beans(v)
 	}
 	for _, v := range class {

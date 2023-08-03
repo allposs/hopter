@@ -1,21 +1,18 @@
 package hopter
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 )
 
-// Customize 用户自定义配置
-type Customize map[string]any
-
-// CustomizeInterface 自定义配置接口
-type CustomizeInterface interface {
-	Get(str string) any
-}
+// config 配置
+type config map[string]any
 
 // Get 用户获取配置信息
-func (c *Customize) Get(str string) any {
+func (c *config) Get(str string) any {
 	prefix := strings.Split(str, ".")
 	getValue := getConfigValue(*c, prefix, 0)
 	if getValue != nil {
@@ -25,7 +22,7 @@ func (c *Customize) Get(str string) any {
 }
 
 // getConfigValue 递归读取用户配置文件
-func getConfigValue(c Customize, prefix []string, index int) any {
+func getConfigValue(c config, prefix []string, index int) any {
 	key := prefix[index]
 	if v, ok := c[key]; ok {
 		if index == len(prefix)-1 {
@@ -33,7 +30,7 @@ func getConfigValue(c Customize, prefix []string, index int) any {
 			return v
 		}
 		index = index + 1
-		if mv, ok := v.(Customize); ok {
+		if mv, ok := v.(config); ok {
 			//值必须是Config类型
 			return getConfigValue(mv, prefix, index)
 		}
@@ -41,8 +38,44 @@ func getConfigValue(c Customize, prefix []string, index int) any {
 	return nil
 }
 
-// ServerConfig 服务器配置
-type ServerConfig struct {
+// Config 配置接口
+type Config interface {
+	Get(str string) any
+	Unmarshal(str string, value any) error
+	Read() Config
+}
+
+// NewConfig 新配置
+func NewConfig() Config {
+	cfg := make(config, 0)
+	cfg["server"] = map[string]any{"port": "8080", "ip": "0.0.0.0"}
+	cfg["log"] = map[string]any{"logLevel": "info"}
+	return &cfg
+}
+
+func (c *config) Read() Config {
+	if b := loadConfigFile(); b != nil {
+		err := yaml.Unmarshal(b, c)
+		if err != nil {
+			Warn("系统初始化异常:服务器解析配置文件异常，%v", err)
+		}
+	}
+	return c
+}
+
+func (c *config) Unmarshal(str string, value any) error {
+	if v := c.Get(str); v != nil {
+		b, err := json.Marshal(v)
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(b, value)
+	}
+	return fmt.Errorf("所寻找的数据为空")
+}
+
+// ginConfig 服务器配置
+type ginConfig struct {
 	Port           string `yaml:"port"`
 	IP             string `yaml:"ip"`
 	ReadTimeout    int    `yaml:"readTimeout"`
@@ -52,44 +85,31 @@ type ServerConfig struct {
 	SessionKey     string `yaml:"sessionKey"`
 }
 
-// config 配置文件
-type config struct {
-	server *ServerConfig
-	log    *LogConfig
-	config *Customize
+// defaultGinConfig 默认配置
+func defaultGinConfig() *ginConfig {
+	res := new(ginConfig)
+	res.IP = "0.0.0.0"
+	res.Port = "8080"
+	res.ReadTimeout = 30
+	res.WriteTimeout = 30
+	res.IdleTimeout = 30
+	res.MaxHeaderBytes = 16384
+	res.SessionKey = sessionKeyPairs
+	return res
 }
 
-// ConfigInterface web配置接口
-type ConfigInterface interface {
-	Server() *ServerConfig
-	Log() *LogConfig
-	Customize() CustomizeInterface
-	Config() ConfigInterface
+// Endpoint 对外端点
+type Endpoint struct {
+	config Config
+	logs   *Klogger
 }
 
-// NewConfig 新配置
-func NewConfig() ConfigInterface {
-	return &config{server: &ServerConfig{Port: "8080", IP: "0.0.0.0"}, log: &LogConfig{}}
+// Config 获取配置
+func (e *Endpoint) Config() Config {
+	return e.config
 }
 
-func (c *config) Server() *ServerConfig {
-	return c.server
-}
-
-func (c *config) Log() *LogConfig {
-	return c.log
-}
-
-func (c *config) Customize() CustomizeInterface {
-	return c.config
-}
-
-func (c *config) Config() ConfigInterface {
-	if b := loadConfigFile(); b != nil {
-		err := yaml.Unmarshal(b, c)
-		if err != nil {
-			Panic("系统初始化异常:服务器解析配置文件异常，%v", err)
-		}
-	}
-	return c
+// Logs 获取日志
+func (e *Endpoint) Logs() *Klogger {
+	return e.logs
 }

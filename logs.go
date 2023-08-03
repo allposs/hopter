@@ -32,10 +32,11 @@ var (
 	logs               *Klogger
 	fileNameDateFormat string // 日志文件名的日期格式
 	timestampFormat    string // 日志条目中的日期时间格式
+	Level              string // 日志等级
 )
 
-// LogConfig 日志配置参数
-type LogConfig struct {
+// logConfig 日志配置参数
+type logConfig struct {
 	// log 路径
 	LogPath string `yaml:"logPath"`
 	// 日志类型 json|text
@@ -70,12 +71,7 @@ type Klogger struct {
 	enableRecordFileInfo bool
 }
 
-// Logger 获取Logger
-func Logger() *Klogger {
-	return logs
-}
-
-func newLogger(option *LogConfig) (*logrus.Logger, error) {
+func newLogger(option *logConfig) (*logrus.Logger, error) {
 
 	if option.LogPath == "" {
 		dir, _ := os.Getwd()
@@ -126,7 +122,7 @@ func newLogger(option *LogConfig) (*logrus.Logger, error) {
 
 // integrate 返回Logger
 // 日志类型是: 普通文本日志|JSON日志 全部级别都写入到同一个文件
-func integrate(option *LogConfig) (*Klogger, error) {
+func integrate(option *logConfig) (*Klogger, error) {
 	log, err := newLogger(option)
 	if err != nil {
 		return nil, err
@@ -171,7 +167,7 @@ func integrate(option *LogConfig) (*Klogger, error) {
 	return logs, nil
 }
 
-func newRotateLog(option *LogConfig, levelStr string) (*rotatelogs.RotateLogs, error) {
+func newRotateLog(option *logConfig, levelStr string) (*rotatelogs.RotateLogs, error) {
 	var (
 		err      error
 		filename string
@@ -208,7 +204,7 @@ func newRotateLog(option *LogConfig, levelStr string) (*rotatelogs.RotateLogs, e
 }
 
 // separate 不同级别的日志输出到不同的文件
-func separate(option *LogConfig) (*Klogger, error) {
+func separate(option *logConfig) (*Klogger, error) {
 	log, err := newLogger(option)
 	if err != nil {
 		return nil, err
@@ -254,12 +250,25 @@ func separate(option *LogConfig) (*Klogger, error) {
 	return logs, nil
 }
 
+func defaultLogConfig() *logConfig {
+	res := new(logConfig)
+	res.LogLevel = "info"
+	return res
+}
+
 // initLog 初始化日志
-func initLog(option *LogConfig) (*Klogger, error) {
-	if option.IsClassSubFile {
-		return separate(option)
+func initLog(option Config) (*Klogger, error) {
+	value := defaultLogConfig()
+	if conf := option.Get("log"); conf != nil {
+		if err := option.Unmarshal("log", value); err != nil {
+			return nil, err
+		}
 	}
-	return integrate(option)
+	Level = value.LogLevel
+	if value.IsClassSubFile {
+		return separate(value)
+	}
+	return integrate(value)
 }
 
 // LogMode logger接口实现
