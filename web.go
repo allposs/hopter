@@ -141,7 +141,7 @@ func (w *Web) Mount(group string, class ...Interface) *Web {
 		v.Init()
 	}
 	for _, v := range class {
-		v.Build(w)
+		v.Windows(w)
 	}
 	return w
 }
