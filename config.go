@@ -21,6 +21,34 @@ func (c *config) Get(str string) any {
 	return nil
 }
 
+// Set 设置配置参数
+func (c *config) Set(str string, value any) Config {
+	prefix := strings.Split(str, ".")
+	config := set(*c, prefix, 0, value)
+	c = &config
+	return c
+}
+
+func set(c config, prefix []string, index int, value any) config {
+	key := prefix[index]
+	_, ok := c[key]
+	if !ok {
+		c[key] = map[string]any{}
+	}
+	if index == len(prefix)-1 {
+		//到了最后一个
+		c[key] = value
+		return c
+	}
+	if conf, is := c[key].(config); is {
+		c[key] = set(conf, prefix, index+1, value)
+	}
+	if conf, is := c[key].(map[string]any); is {
+		c[key] = set(conf, prefix, index+1, value)
+	}
+	return c
+}
+
 // getConfigValue 递归读取用户配置文件
 func getConfigValue(c config, prefix []string, index int) any {
 	key := prefix[index]
@@ -43,6 +71,7 @@ type Config interface {
 	Get(str string) any
 	Unmarshal(str string, value any) error
 	Read() Config
+	Set(str string, value any) Config
 }
 
 // NewConfig 新配置
