@@ -77,11 +77,11 @@ func (w *Web) SetSessionsStore(store Store, names ...string) *Web {
 
 // Run 运行Web程序
 func (w *Web) Run() {
-	if bean := w.beanFactory.GetBean(new(Config)); bean != nil {
-		if conf, ok := bean.(Config); ok {
+	if bean := w.beanFactory.GetBean(new(Endpoint)); bean != nil {
+		if conf, ok := bean.(*Endpoint); ok {
 			value := defaultGinConfig()
-			if v := conf.Get("server"); v != nil {
-				if err := conf.Unmarshal("server", value); err != nil {
+			if v := conf.Config().Get("server"); v != nil {
+				if err := conf.Config().Unmarshal("server", value); err != nil {
 					Fatal("系统初始化异常:获取http启动参数异常,%v", err)
 				}
 			}
