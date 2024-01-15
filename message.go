@@ -12,6 +12,8 @@ const (
 	JSONClass MessageClass = "json"
 	//WebsocketClass websocket类型
 	WebsocketClass MessageClass = "websocket"
+	//GINHandlerFunc gin的HandlerFunc类型
+	GINHandlerFunc MessageClass = "gin"
 )
 
 // Message 返回消息接口
