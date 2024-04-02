@@ -16,12 +16,12 @@ func NewBeanFactory() *BeanFactory {
 	return bf
 }
 
-// setBean 往内存中塞入bean
-func (b *BeanFactory) setBean(beans ...any) {
+// set 往内存中塞入bean
+func (b *BeanFactory) set(beans ...any) {
 	for _, p := range beans {
 		obj := reflect.TypeOf(p)
 		if obj.Kind() == reflect.Func {
-			conf := b.GetBean(new(Endpoint)).(*Endpoint)
+			conf := b.get(new(Endpoint)).(*Endpoint)
 			b.beans = append(b.beans, p.(func(conf Endpoint) any)(*conf))
 			continue
 		}
@@ -29,13 +29,13 @@ func (b *BeanFactory) setBean(beans ...any) {
 	}
 }
 
-// GetBean 外部使用
-func (b *BeanFactory) GetBean(bean any) any {
-	return b.getBean(reflect.TypeOf(bean))
+// get 外部使用
+func (b *BeanFactory) get(bean any) any {
+	return b.find(reflect.TypeOf(bean))
 }
 
-// getBean 得到 内存中预先设置好的bean对象
-func (b *BeanFactory) getBean(t reflect.Type) any {
+// find 得到内存中预先设置好的bean对象
+func (b *BeanFactory) find(t reflect.Type) any {
 	for _, p := range b.beans {
 		if t == reflect.TypeOf(p) {
 			return p
@@ -44,7 +44,7 @@ func (b *BeanFactory) getBean(t reflect.Type) any {
 	return nil
 }
 
-// Inject 给外部用的 （后面还要改,这个方法不处理注解)
+// Inject 把bean注入到控制器中
 func (b *BeanFactory) Inject(object any) {
 	vObject := reflect.ValueOf(object)
 	if vObject.Kind() == reflect.Ptr {
@@ -56,25 +56,15 @@ func (b *BeanFactory) Inject(object any) {
 		if f.Kind() != reflect.Ptr || !f.IsNil() {
 			continue
 		}
-		if p := b.getBean(f.Type()); p != nil && f.CanInterface() {
+		if p := b.find(f.Type()); p != nil && f.CanInterface() {
 			f.Set(reflect.New(f.Type().Elem()))
 			f.Elem().Set(reflect.ValueOf(p).Elem())
 		}
-
 	}
 }
 
-// inject 把bean注入到控制器中 (内部方法,用户控制器注入。并同时处理注解)
-func (b *BeanFactory) inject(class Interface) {
-	vClass := reflect.ValueOf(class).Elem()
-	for i := 0; i < vClass.NumField(); i++ {
-		f := vClass.Field(i)
-		if f.Kind() != reflect.Ptr || !f.IsNil() {
-			continue
-		}
-		if p := b.getBean(f.Type()); p != nil {
-			f.Set(reflect.New(f.Type().Elem()))
-			f.Elem().Set(reflect.ValueOf(p).Elem())
-		}
-	}
+// Beans Bean注册
+func (w *Web) Beans(beans ...any) *Web {
+	w.beanFactory.set(beans...)
+	return w
 }

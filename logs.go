@@ -98,7 +98,6 @@ func newLogger(option *logConfig) (*logrus.Logger, error) {
 	}
 	level, err := logrus.ParseLevel(option.LogLevel)
 	if err != nil {
-		Warn("系统初始化异常:获取日志级别异常，%v", err)
 		level = logrus.InfoLevel
 	}
 	log.SetLevel(level)
@@ -137,7 +136,7 @@ func integrate(option *logConfig) (*Klogger, error) {
 	} else {
 		absPath, err := filepath.Abs(option.LogPath)
 		if err != nil {
-			return nil, fmt.Errorf("rotatelogs.New error: %s", err)
+			return nil, fmt.Errorf("日志初始化异常,%v", err)
 		}
 		writer, err = rotatelogs.New(
 			fmt.Sprintf("%s-%s", absPath, fileNameDateFormat),
@@ -185,7 +184,7 @@ func newRotateLog(option *logConfig, levelStr string) (*rotatelogs.RotateLogs, e
 	} else {
 		absPath, err = filepath.Abs(filename)
 		if err != nil {
-			return nil, fmt.Errorf("rotatelogs.New error: %s", err)
+			return nil, fmt.Errorf("日志初始化异常,%v", err)
 		}
 
 		writer, err = rotatelogs.New(
@@ -197,7 +196,7 @@ func newRotateLog(option *logConfig, levelStr string) (*rotatelogs.RotateLogs, e
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("rotatelogs.New error: %s", err)
+		return nil, fmt.Errorf("日志初始化异常,%v", err)
 	}
 
 	return writer, nil

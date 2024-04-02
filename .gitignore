@@ -25,6 +25,7 @@ logs
 .clang_complete
 *.xcodeproj/project.xcworkspace/
 *.xcodeproj/xcuserdata/
+*/__debug_bin*
 
 # for IDEA
 */build/*
@@ -37,4 +38,3 @@ target/
 */*.iml
 *.iml
 
-docs/bin/*

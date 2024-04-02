@@ -86,7 +86,7 @@ func (c *config) Read() Config {
 	if b := loadConfigFile(); b != nil {
 		err := yaml.Unmarshal(b, c)
 		if err != nil {
-			Warn("系统初始化异常:服务器解析配置文件异常，%v", err)
+			Warn("web服务启动异常:服务器解析配置文件异常，%v", err)
 		}
 	}
 	return c

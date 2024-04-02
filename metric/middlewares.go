@@ -1,11 +1,11 @@
-package monitor
+package metric
 
 import (
 	"fmt"
 	"strconv"
 	"time"
 
-	"github.com/allposs/hopter/monitor/bloom"
+	"github.com/allposs/hopter/metric/bloom"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

@@ -16,5 +16,12 @@ import (
 func main() {
 	web.New(web.NewConfig()).Run()
 }
-
 ```
+# 配置文件
+config/config.yaml
+```yaml
+server:
+  port: '8000'
+  ip: '0.0.0.0'
+```
+

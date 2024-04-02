@@ -3,6 +3,8 @@ package hopter
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+	ctx "github.com/gorilla/context"
 	"github.com/gorilla/sessions"
 )
 
@@ -125,4 +127,23 @@ func (options Options) ToGorillaOptions() *sessions.Options {
 		HttpOnly: options.HTTPOnly,
 		SameSite: options.SameSite,
 	}
+}
+
+// sessionsMany 复数session
+func sessionsMany(store Store, names ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		sessions := make(map[string]Session, len(names))
+		for _, name := range names {
+			sessions[name] = &session{name, c.Request, store, nil, false, c.Writer}
+		}
+		c.Set("SessionStore", sessions)
+		defer ctx.Clear(c.Request)
+		c.Next()
+	}
+}
+
+// SetSessionsStore Sessions存储
+func (w *Web) SetSessionsStore(store Store, names ...string) *Web {
+	w.engine.Use(sessionsMany(store, names...))
+	return w
 }

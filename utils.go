@@ -6,6 +6,8 @@ import (
 	"path"
 	"runtime"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // loadConfigFile 读取配置文件
@@ -14,7 +16,7 @@ func loadConfigFile() []byte {
 	file := dir + "/config/config.yaml"
 	b, err := os.ReadFile(file)
 	if err != nil {
-		Warn("系统初始化异常:服务器读取配置文件异常，%v", err)
+		Warn("服务初始化异常:服务器读取配置文件异常，%v", err)
 	}
 	return b
 }
@@ -45,4 +47,16 @@ func isWindow() bool {
 // getNowDateTime 获取当前的日期时间
 func getNowDateTime() string {
 	return time.Now().Format(TimestampFormat)
+}
+
+// recovered 错误处理中间件
+func recovered() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		defer func() {
+			if e := recover(); any(e) != nil {
+				ctx.AbortWithStatusJSON(401, gin.H{"web服务异常:%v,请联系管理人员": e})
+			}
+		}()
+		ctx.Next()
+	}
 }
