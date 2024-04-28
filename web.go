@@ -57,8 +57,11 @@ type Context struct {
 	*gin.Context
 }
 
+type Message interface {
+}
+
 // HandlerFunc  处理函数
-type HandlerFunc func(ctx *Context)
+type HandlerFunc func(ctx *Context) Message
 
 // Func 消息返回处理
 func (h HandlerFunc) Func() gin.HandlerFunc {

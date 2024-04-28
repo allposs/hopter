@@ -50,7 +50,7 @@ type logConfig struct {
 	// 日志中日期时间格式
 	TimestampFormat string `yaml:"timestampFormat"`
 	// 日志级别
-	LogLevel string `yaml:"logLevel"`
+	Level string `yaml:"level"`
 	// 日志最长保存多久
 	MaxAge time.Duration `yaml:"maxAge"`
 	// 日志默认多长时间轮转一次
@@ -96,7 +96,7 @@ func newLogger(option *logConfig) (*logrus.Logger, error) {
 	if option.IsForeground {
 		log.SetOutput(os.Stderr)
 	}
-	level, err := logrus.ParseLevel(option.LogLevel)
+	level, err := logrus.ParseLevel(option.Level)
 	if err != nil {
 		level = logrus.InfoLevel
 	}
@@ -251,7 +251,7 @@ func separate(option *logConfig) (*Klogger, error) {
 
 func defaultLogConfig() *logConfig {
 	res := new(logConfig)
-	res.LogLevel = "info"
+	res.Level = "info"
 	return res
 }
 
@@ -263,7 +263,7 @@ func initLog(option Config) (*Klogger, error) {
 			return nil, err
 		}
 	}
-	Level = value.LogLevel
+	Level = value.Level
 	if value.IsClassSubFile {
 		return separate(value)
 	}
