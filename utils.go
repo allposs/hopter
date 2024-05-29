@@ -60,3 +60,6 @@ func recovered() gin.HandlerFunc {
 		ctx.Next()
 	}
 }
+
+// H 定义H类型
+type H gin.H
