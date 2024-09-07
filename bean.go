@@ -64,7 +64,7 @@ func (b *BeanFactory) Inject(object any) {
 }
 
 // Beans Bean注册
-func (w *Web) Beans(beans ...any) *Web {
-	w.beanFactory.set(beans...)
-	return w
+func (e *Engine) Beans(beans ...any) *Engine {
+	e.beanFactory.set(beans...)
+	return e
 }

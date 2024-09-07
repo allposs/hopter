@@ -14,7 +14,7 @@ type Middleware interface {
 }
 
 // metric Metric插件
-func (w *Web) metric() {
+func (e *Engine) metric() {
 	// get global Monitor object
 	m := metric.GetMonitor()
 	// +optional set metric path, default /debug/metrics
@@ -25,15 +25,15 @@ func (w *Web) metric() {
 	// used to p95, p99
 	m.SetDuration([]float64{0.1, 0.3, 1.2, 5, 10})
 	// set middleware for gin
-	m.Use(w.engine)
-	w.beanFactory.set(m)
+	m.Use(e.engine)
+	e.beanFactory.set(m)
 }
 
 // Attach 中间件加入
-func (w *Web) Attach(m ...Middleware) *Web {
+func (e *Engine) Attach(m ...Middleware) *Engine {
 	for _, v := range m {
-		w.engine.Use(func(ctx *gin.Context) {
-			w.beanFactory.Inject(v.OnInject())
+		e.engine.Use(func(ctx *gin.Context) {
+			e.beanFactory.Inject(v.OnInject())
 			err := v.Handler(&Context{ctx})
 			if err != nil {
 				ctx.AbortWithStatusJSON(400, gin.H{"error": err.Error()})
@@ -42,5 +42,5 @@ func (w *Web) Attach(m ...Middleware) *Web {
 			}
 		})
 	}
-	return w
+	return e
 }

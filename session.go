@@ -143,7 +143,7 @@ func sessionsMany(store Store, names ...string) gin.HandlerFunc {
 }
 
 // SetSessionsStore Sessions存储
-func (w *Web) SetSessionsStore(store Store, names ...string) *Web {
-	w.engine.Use(sessionsMany(store, names...))
-	return w
+func (e *Engine) SetSessionsStore(store Store, names ...string) *Engine {
+	e.engine.Use(sessionsMany(store, names...))
+	return e
 }

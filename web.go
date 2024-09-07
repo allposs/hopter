@@ -10,8 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Web web程序结构
-type Web struct {
+// Engine web程序结构
+type Engine struct {
 	engine      *gin.Engine
 	group       *gin.RouterGroup
 	beanFactory *BeanFactory
@@ -23,8 +23,8 @@ func init() {
 }
 
 // New 创建web程序
-func New(conf Config) *Web {
-	var this = &Web{}
+func New(conf Config) *Engine {
+	var this = &Engine{}
 	logger, err := initLog(conf.Read())
 	if err != nil {
 		Fatal("web服务启动失败:初始化日志错误，%v", err)
@@ -71,14 +71,14 @@ func (h HandlerFunc) Func() gin.HandlerFunc {
 }
 
 // Handle  重载gin的handle方法
-func (w *Web) Handle(httpMethod, relativePath string, handler HandlerFunc) *Web {
-	w.group.Handle(httpMethod, relativePath, handler.Func())
-	return w
+func (e *Engine) Handle(httpMethod, relativePath string, handler HandlerFunc) *Engine {
+	e.group.Handle(httpMethod, relativePath, handler.Func())
+	return e
 }
 
 // Run 运行Web程序
-func (w *Web) Run() {
-	if bean := w.beanFactory.get(new(Endpoint)); bean != nil {
+func (e *Engine) Run() {
+	if bean := e.beanFactory.get(new(Endpoint)); bean != nil {
 		if conf, ok := bean.(*Endpoint); ok {
 			value := defaultGinConfig()
 			if v := conf.Config().Get("server"); v != nil {
@@ -86,20 +86,20 @@ func (w *Web) Run() {
 					Fatal("web服务启动失败:获取启动参数异常,%v", err)
 				}
 			}
-			w.server.Addr = fmt.Sprintf("%s:%s", value.IP, value.Port)
-			w.server.ReadTimeout = time.Duration(value.ReadTimeout) * time.Second
-			w.server.WriteTimeout = time.Duration(value.WriteTimeout) * time.Second
-			w.server.IdleTimeout = time.Duration(value.IdleTimeout) * time.Second
-			w.server.MaxHeaderBytes = value.MaxHeaderBytes
+			e.server.Addr = fmt.Sprintf("%s:%s", value.IP, value.Port)
+			e.server.ReadTimeout = time.Duration(value.ReadTimeout) * time.Second
+			e.server.WriteTimeout = time.Duration(value.WriteTimeout) * time.Second
+			e.server.IdleTimeout = time.Duration(value.IdleTimeout) * time.Second
+			e.server.MaxHeaderBytes = value.MaxHeaderBytes
 		}
 	}
-	w.server.Handler = w.engine
-	if err := w.server.ListenAndServe(); err != nil {
+	e.server.Handler = e.engine
+	if err := e.server.ListenAndServe(); err != nil {
 		Fatal("web服务启动失败:服务器监听端口异常，%v", err)
 	}
 }
 
 // Shutdown 关闭服务
-func (w *Web) Shutdown(ctx context.Context) error {
-	return w.server.Shutdown(ctx)
+func (e *Engine) Shutdown(ctx context.Context) error {
+	return e.server.Shutdown(ctx)
 }
