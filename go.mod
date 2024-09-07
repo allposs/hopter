@@ -1,9 +1,8 @@
-module allposs.com/hopter
+module "github.com/allposs/hopter"
 
 go 1.23.1
 
 require (
-	github.com/allposs/hopter v0.2.2
 	github.com/bits-and-blooms/bitset v1.14.3
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gorilla/context v1.1.2
