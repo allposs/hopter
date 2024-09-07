@@ -8,6 +8,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// DataNotFount 数据不存在
+var DataNotFount = fmt.Errorf("data not fount")
+
 // config 配置
 type config map[string]any
 
@@ -100,7 +103,7 @@ func (c *config) Unmarshal(str string, value any) error {
 		}
 		return json.Unmarshal(b, value)
 	}
-	return fmt.Errorf("所寻找的数据为空")
+	return DataNotFount
 }
 
 // ginConfig 服务器配置
