@@ -10,12 +10,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Engine web程序结构
+// Engine Engine程序结构
 type Engine struct {
 	engine      *gin.Engine
 	group       *gin.RouterGroup
 	beanFactory *BeanFactory
 	server      *http.Server
+	Endpoint    *Endpoint
 }
 
 func init() {
@@ -45,7 +46,8 @@ func New(conf Config) *Engine {
 	}
 	this.engine = gin.Default()
 	this.beanFactory = NewBeanFactory()
-	this.beanFactory.set(&Endpoint{conf, logger})
+	this.Endpoint = &Endpoint{conf, logger}
+	this.beanFactory.set(this, this.Endpoint)
 	this.engine.Use(recovered())
 	this.engine.Use(LogMiddleware())
 	this.metric()
@@ -57,7 +59,9 @@ type Context struct {
 	*gin.Context
 }
 
+// Message 消息体
 type Message interface {
+	Send(ctx Context) any
 }
 
 // HandlerFunc  处理函数
@@ -97,6 +101,11 @@ func (e *Engine) Run() {
 	if err := e.server.ListenAndServe(); err != nil {
 		Fatal("web服务启动失败:服务器监听端口异常，%v", err)
 	}
+}
+
+// Routes 返回路由列表
+func (e *Engine) Routes() gin.RoutesInfo {
+	return e.engine.Routes()
 }
 
 // Shutdown 关闭服务

@@ -5,7 +5,7 @@ import (
 	"os"
 	"path"
 	"runtime"
-	"time"
+	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
 )
@@ -44,22 +44,15 @@ func isWindow() bool {
 	return runtime.GOOS == "windows"
 }
 
-// getNowDateTime 获取当前的日期时间
-func getNowDateTime() string {
-	return time.Now().Format(TimestampFormat)
-}
-
 // recovered 错误处理中间件
 func recovered() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		defer func() {
 			if e := recover(); any(e) != nil {
-				ctx.AbortWithStatusJSON(401, gin.H{"web服务异常:%v,请联系管理人员": e})
+				ctx.AbortWithStatusJSON(400, gin.H{"web服务异常:%v,请联系管理人员": e})
+				debug.PrintStack()
 			}
 		}()
 		ctx.Next()
 	}
 }
-
-// H 定义H类型
-type H gin.H

@@ -9,7 +9,7 @@ import (
 )
 
 // sessionKeyPairs session默认的KeyPairs
-var sessionKeyPairs string = "github.com/allposs/hopter"
+var sessionKeyPairs string = "yostar.com"
 
 // Store 存储接口
 type Store interface {

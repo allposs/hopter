@@ -1,6 +1,8 @@
 package hopter
 
 import (
+	"runtime/debug"
+
 	"github.com/allposs/hopter/metric"
 	"github.com/gin-gonic/gin"
 )
@@ -36,7 +38,8 @@ func (e *Engine) Attach(m ...Middleware) *Engine {
 			e.beanFactory.Inject(v.OnInject())
 			err := v.Handler(&Context{ctx})
 			if err != nil {
-				ctx.AbortWithStatusJSON(400, gin.H{"error": err.Error()})
+				ctx.AbortWithStatusJSON(400, gin.H{"web服务异常:%v,请联系管理人员": err})
+				debug.PrintStack()
 			} else {
 				ctx.Next()
 			}

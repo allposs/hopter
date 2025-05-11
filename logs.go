@@ -50,7 +50,7 @@ type logConfig struct {
 	// 日志中日期时间格式
 	TimestampFormat string `yaml:"timestampFormat"`
 	// 日志级别
-	Level string `yaml:"level"`
+	Level string `yaml:"Level"`
 	// 日志最长保存多久
 	MaxAge time.Duration `yaml:"maxAge"`
 	// 日志默认多长时间轮转一次
