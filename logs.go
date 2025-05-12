@@ -37,10 +37,12 @@ var (
 
 // logConfig 日志配置参数
 type logConfig struct {
+	// 日志级别
+	Level string `yaml:"level"`
 	// log 路径
-	LogPath string `yaml:"logPath"`
+	Path string `yaml:"path"`
 	// 日志类型 json|text
-	LogType string `yaml:"logType"`
+	Type string `yaml:"type"`
 	//是否不同类型分文件存储
 	IsClassSubFile bool `yaml:"isClassSubFile"`
 	// 文件名的日期格式
@@ -49,8 +51,6 @@ type logConfig struct {
 	IsForeground bool `yaml:"isForeground"`
 	// 日志中日期时间格式
 	TimestampFormat string `yaml:"timestampFormat"`
-	// 日志级别
-	Level string `yaml:"Level"`
 	// 日志最长保存多久
 	MaxAge time.Duration `yaml:"maxAge"`
 	// 日志默认多长时间轮转一次
@@ -73,12 +73,12 @@ type Klogger struct {
 
 func newLogger(option *logConfig) (*logrus.Logger, error) {
 
-	if option.LogPath == "" {
+	if option.Path == "" {
 		dir, _ := os.Getwd()
 		path := dir + "/logs/server.log"
-		option.LogPath = path
+		option.Path = path
 	}
-	if err := makeDirAll(option.LogPath); err != nil {
+	if err := makeDirAll(option.Path); err != nil {
 		return nil, err
 	}
 	if option.FileNameDateFormat == "" {
@@ -101,7 +101,7 @@ func newLogger(option *logConfig) (*logrus.Logger, error) {
 		level = logrus.InfoLevel
 	}
 	log.SetLevel(level)
-	switch option.LogType {
+	switch option.Type {
 	case JSON:
 		format := &logrus.JSONFormatter{
 			TimestampFormat: timestampFormat,
@@ -129,12 +129,12 @@ func integrate(option *logConfig) (*Klogger, error) {
 	writer := new(rotatelogs.RotateLogs)
 	if isWindow() {
 		writer, err = rotatelogs.New(
-			fmt.Sprintf("%s-%s", option.LogPath, fileNameDateFormat),
+			fmt.Sprintf("%s-%s", option.Path, fileNameDateFormat),
 			rotatelogs.WithMaxAge(option.MaxAge),
 			rotatelogs.WithRotationTime(option.RotationTime),
 		)
 	} else {
-		absPath, err := filepath.Abs(option.LogPath)
+		absPath, err := filepath.Abs(option.Path)
 		if err != nil {
 			return nil, fmt.Errorf("日志初始化异常,%v", err)
 		}
@@ -174,7 +174,7 @@ func newRotateLog(option *logConfig, levelStr string) (*rotatelogs.RotateLogs, e
 		absPath  string
 	)
 
-	filename = fmt.Sprintf("%s.%s", option.LogPath, levelStr)
+	filename = fmt.Sprintf("%s.%s", option.Path, levelStr)
 	if isWindow() {
 		writer, err = rotatelogs.New(
 			fmt.Sprintf("%s.%s", filename, fileNameDateFormat),
@@ -252,6 +252,8 @@ func separate(option *logConfig) (*Klogger, error) {
 func defaultLogConfig() *logConfig {
 	res := new(logConfig)
 	res.Level = "info"
+	res.Path = "./logs/server.log"
+	res.Type = Text
 	return res
 }
 
@@ -259,7 +261,7 @@ func defaultLogConfig() *logConfig {
 func initLog(option Config) (*Klogger, error) {
 	value := defaultLogConfig()
 	if conf := option.Get("log"); conf != nil {
-		if err := option.Unmarshal("log", value); err != nil {
+		if err := option.UnmarshalKey("log", value); err != nil {
 			return nil, err
 		}
 	}

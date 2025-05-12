@@ -24,9 +24,9 @@ func init() {
 }
 
 // New 创建web程序
-func New(conf Config) *Engine {
+func New(conf Config, cfg, prefix string) *Engine {
 	var this = &Engine{}
-	logger, err := initLog(conf.Read())
+	logger, err := initLog(conf.ReadInConfig())
 	if err != nil {
 		Fatal("web服务启动失败:初始化日志错误，%v", err)
 	}
@@ -86,7 +86,7 @@ func (e *Engine) Run() {
 		if conf, ok := bean.(*Endpoint); ok {
 			value := defaultGinConfig()
 			if v := conf.Config().Get("server"); v != nil {
-				if err := conf.Config().Unmarshal("server", value); err != nil {
+				if err := conf.Config().UnmarshalKey("server", value); err != nil {
 					Fatal("web服务启动失败:获取启动参数异常,%v", err)
 				}
 			}

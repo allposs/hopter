@@ -5,6 +5,6 @@ import (
 )
 
 func main() {
-	config := web.NewConfig()
-	web.New(config).Attach().Run()
+	config := web.NewConfig("", "HOPTER")
+	web.New(config, "", "").Attach().Run()
 }

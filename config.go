@@ -1,106 +1,76 @@
 package hopter
 
 import (
-	"encoding/json"
-	"fmt"
-	"strings"
-
-	"gopkg.in/yaml.v3"
+	"github.com/spf13/viper"
 )
 
 // config 配置
-type config map[string]any
+type config struct {
+	*viper.Viper
+}
+
+func NewConfig(path, prefix string) *config {
+	res := &config{viper.New()}
+	if path != "" {
+		res.SetConfigFile(path)
+	} else {
+		res.AddConfigPath("./config")
+		res.SetConfigName("config")
+		res.SetConfigType("yaml")
+	}
+
+	// 读取环境变量
+	if prefix != "" {
+		res.AutomaticEnv()
+		// 环境变量前缀
+		res.SetEnvPrefix(prefix)
+	}
+	// 设置默认值
+	res.SetDefault("server.port", 8000)
+	res.SetDefault("server.ip", "0.0.0.0")
+	res.SetDefault("server.readTimeout", 30)
+	res.SetDefault("server.writeTimeout", 30)
+	res.SetDefault("server.idleTimeout", 30)
+	res.SetDefault("server.maxHeaderBytes", 16384)
+	res.SetDefault("server.sessionKey", sessionKeyPairs)
+	res.SetDefault("log.level", "info")
+	res.SetDefault("log.path", "./logs/server.log")
+	res.SetDefault("log.type", "text")
+	return res
+}
 
 // Get 用户获取配置信息
-func (c *config) Get(str string) any {
-	prefix := strings.Split(str, ".")
-	getValue := getConfigValue(*c, prefix, 0)
-	if getValue != nil {
-		return getValue
-	}
-	return nil
+func (c config) Get(str string) any {
+	return c.Viper.Get(str)
 }
 
-// Set 设置配置参数
+// // Set 设置配置参数
 func (c *config) Set(str string, value any) Config {
-	prefix := strings.Split(str, ".")
-	config := set(*c, prefix, 0, value)
-	c = &config
+	c.Viper.Set(str, value)
 	return c
-}
-
-func set(c config, prefix []string, index int, value any) config {
-	key := prefix[index]
-	_, ok := c[key]
-	if !ok {
-		c[key] = map[string]any{}
-	}
-	if index == len(prefix)-1 {
-		//到了最后一个
-		c[key] = value
-		return c
-	}
-	if conf, is := c[key].(config); is {
-		c[key] = set(conf, prefix, index+1, value)
-	}
-	if conf, is := c[key].(map[string]any); is {
-		c[key] = set(conf, prefix, index+1, value)
-	}
-	return c
-}
-
-// getConfigValue 递归读取用户配置文件
-func getConfigValue(c config, prefix []string, index int) any {
-	key := prefix[index]
-	if v, ok := c[key]; ok {
-		if index == len(prefix)-1 {
-			//到了最后一个
-			return v
-		}
-		index = index + 1
-		if mv, ok := v.(config); ok {
-			//值必须是Config类型
-			return getConfigValue(mv, prefix, index)
-		}
-	}
-	return nil
 }
 
 // Config 配置接口
 type Config interface {
 	Get(str string) any
-	Unmarshal(str string, value any) error
-	Read() Config
+	UnmarshalKey(str string, value any, opts ...viper.DecoderConfigOption) error
+	ReadInConfig() Config
 	Set(str string, value any) Config
 }
 
-// NewConfig 新配置
-func NewConfig() Config {
-	cfg := make(config, 0)
-	cfg["server"] = map[string]any{"port": "8080", "ip": "0.0.0.0"}
-	cfg["log"] = map[string]any{"logLevel": "info"}
-	return &cfg
-}
-
-func (c *config) Read() Config {
-	if b := loadConfigFile(); b != nil {
-		err := yaml.Unmarshal(b, c)
-		if err != nil {
+// ReadInConfig 读取配置文件
+func (c *config) ReadInConfig() Config {
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			Warn("web服务启动异常:服务器解析配置文件异常，%v", err)
 		}
 	}
 	return c
 }
 
-func (c *config) Unmarshal(str string, value any) error {
-	if v := c.Get(str); v != nil {
-		b, err := json.Marshal(v)
-		if err != nil {
-			return err
-		}
-		return json.Unmarshal(b, value)
-	}
-	return fmt.Errorf("所寻找的数据为空")
+// UnmarshalKey 用于将配置文件中的特定key的值解析并映射到一个结构体（Struct）中
+func (c *config) UnmarshalKey(str string, value any, opts ...viper.DecoderConfigOption) error {
+	return c.Viper.UnmarshalKey(str, value, opts...)
 }
 
 // ginConfig 服务器配置
